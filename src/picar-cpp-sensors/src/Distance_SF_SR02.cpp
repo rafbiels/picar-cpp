@@ -5,8 +5,10 @@
 
 #include <chrono>
 #include <iostream>
+#include <list>
 #include <memory>
 #include <mutex>
+#include <numeric>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -124,6 +126,7 @@ class DistancePublisher : public rclcpp::Node {
   public:
     DistancePublisher() : Node("Distance_SF_SR02") {
       m_publisher = create_publisher<std_msgs::msg::Int32>("distance", 10);
+      m_publisherStable = create_publisher<std_msgs::msg::Int32>("distanceStable", 10);
       m_timer = create_wall_timer(m_interval, std::bind(&DistancePublisher::timer_callback, this));
       m_chip.setLogger(get_logger());
 
@@ -143,16 +146,30 @@ class DistancePublisher : public rclcpp::Node {
         RCLCPP_DEBUG(get_logger(), "Distance not read, not publishing");
         return;
       }
-      RCLCPP_INFO(get_logger(), "Publishing distance: %d mm", distance);
       auto message = std_msgs::msg::Int32();
       message.data = distance;
       m_publisher->publish(message);
+      auto messageStable = std_msgs::msg::Int32();
+      messageStable.data = stableValue(distance);
+      m_publisherStable->publish(messageStable);
+      RCLCPP_INFO(get_logger(), "Published distance, insta = %d mm, stable = %d mm", distance, messageStable.data);
+    }
+
+    int stableValue(int instaValue) {
+      while (m_recentValues.size()>=m_maxRecentValues) {
+        m_recentValues.pop_back();
+      }
+      m_recentValues.push_front(instaValue);
+      return std::accumulate(m_recentValues.begin(),m_recentValues.end(),int{0}) / m_recentValues.size();
     }
 
     // Private members
     rclcpp::TimerBase::SharedPtr m_timer;
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr m_publisher;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr m_publisherStable;
     std::chrono::milliseconds m_interval{80};
+    std::list<int> m_recentValues;
+    size_t m_maxRecentValues{10};
     Chip_SF_SR02 m_chip;
 };
 
