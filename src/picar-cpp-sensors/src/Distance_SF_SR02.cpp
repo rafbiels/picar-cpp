@@ -88,7 +88,10 @@ class Chip_SF_SR02 {
       long long int diffNano = (t2-t1).count();
       static constexpr long long int soundSpeed{340};
       static constexpr long long int nanoToMilli{1000000};
-      return static_cast<int>(diffNano*soundSpeed/nanoToMilli);
+      int soundTravelled = static_cast<int>(diffNano*soundSpeed/nanoToMilli);
+      int rawDistance = soundTravelled / 2; // Sound travels there and back
+      static constexpr int correction{50}; // Measurements of my sensor seem to be off by this value, don't know why
+      return rawDistance + correction;
     }
     rclcpp::Logger& getLogger() {
       if (not m_logger.has_value()) {
