@@ -22,7 +22,7 @@ target_link_libraries(Display_SH1106 lcdgfx)
 target_include_directories(Display_SH1106 PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                            $<INSTALL_INTERFACE:include>
-                           ${CMAKE_CURRENT_SOURCE_DIR}/../lib/lcdgfx/src)
+                           ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/lcdgfx/src)
 install(TARGETS Display_SH1106
         DESTINATION lib/${PROJECT_NAME})
 
